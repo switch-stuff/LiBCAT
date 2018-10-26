@@ -8,7 +8,10 @@ namespace LiBCAT
     /// </summary>
     public static class Bcat
     {
-        private static readonly byte[] NewsPassphrase =
+        /// <summary>
+        /// The passphrase used for news decryption.
+        /// </summary>
+        public static readonly byte[] NewsPassphrase =
         {
             0x61, 0x63, 0x64, 0x61, 0x33, 0x35, 0x38, 0x62,
             0x34, 0x64, 0x33, 0x32, 0x64, 0x31, 0x37, 0x66,
@@ -20,7 +23,10 @@ namespace LiBCAT
             0x39, 0x35, 0x62, 0x62, 0x66, 0x38, 0x30, 0x66
         };
 
-        private const ulong QLaunchTID = 0x100000000001000;
+        /// <summary>
+        /// QLaunch's title ID, used for news.
+        /// </summary>
+        public const ulong QLaunchTID = 0x100000000001000;
 
         internal static byte[] TBA(this string Input) => Encoding.ASCII.GetBytes(Input);
 
@@ -29,15 +35,17 @@ namespace LiBCAT
         /// </summary>
         /// <param name="URL">The target URL.</param>
         /// <param name="AsJson">Whether to return it as raw data or a Json.</param>
+        /// <param name="TID">The target title ID.</param>
+        /// <param name="Passphrase">The target title's passphrase.</param>
         /// <returns>The news article JSON as a string.</returns>
-        public static object GetData(string URL, bool AsJson)
+        public static object GetData(string URL, bool AsJson, ulong TID, string Passphrase)
         {
             var BcatFile =
             Crypto.DecryptBcatData
             (
                 Crypto.GetBcatData(URL),
-                QLaunchTID,
-                NewsPassphrase
+                TID,
+                Encoding.ASCII.GetBytes(Passphrase)
             );
 
             if (AsJson) return MessagePackSerializer.ToJson(BcatFile);
