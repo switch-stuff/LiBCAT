@@ -3,49 +3,126 @@ using System.Text;
 
 namespace LiBCAT
 {
+    /// <summary>
+    /// The base class.
+    /// </summary>
     public static class Bcat
     {
+        private static readonly byte[] NewsPassphrase =
+        {
+            0x61, 0x63, 0x64, 0x61, 0x33, 0x35, 0x38, 0x62,
+            0x34, 0x64, 0x33, 0x32, 0x64, 0x31, 0x37, 0x66,
+            0x64, 0x34, 0x30, 0x33, 0x37, 0x63, 0x31, 0x62,
+            0x35, 0x65, 0x30, 0x32, 0x33, 0x35, 0x34, 0x32,
+            0x37, 0x61, 0x38, 0x35, 0x36, 0x33, 0x66, 0x39,
+            0x33, 0x62, 0x30, 0x66, 0x64, 0x62, 0x34, 0x32,
+            0x61, 0x34, 0x61, 0x35, 0x33, 0x36, 0x65, 0x65,
+            0x39, 0x35, 0x62, 0x62, 0x66, 0x38, 0x30, 0x66
+        };
+
+        private const ulong QLaunchTID = 0x100000000001000;
+
         internal static byte[] TBA(this string Input) => Encoding.ASCII.GetBytes(Input);
 
+        /// <summary>
+        /// Gets the news article JSON from the specified URL.
+        /// </summary>
+        /// <param name="URL">The target URL.</param>
+        /// <param name="AsJson">Whether to return it as raw data or a Json.</param>
+        /// <returns>The news article JSON as a string.</returns>
+        public static object GetData(string URL, bool AsJson)
+        {
+            var BcatFile =
+            Crypto.DecryptBcatData
+            (
+                Crypto.GetBcatData(URL),
+                QLaunchTID,
+                NewsPassphrase
+            );
+
+            if (AsJson) return MessagePackSerializer.ToJson(BcatFile);
+            else return BcatFile;
+        }
+
+        /// <summary>
+        /// Provides a wrapper for the BCAT news API.
+        /// </summary>
         public static class News
         {
-            private const string NewsPassphrase = "acda358b4d32d17fd4037c1b5e0235427a8563f93b0fdb42a4a536ee95bbf80f";
-            private const ulong QLaunchTID = 0x100000000001000;
-
             /// <summary>
             /// A structure containing the target language and country.
             /// </summary>
             public struct Region
             {
+                /// <summary>
+                /// A language; see the Languages class for a list.
+                /// </summary>
                 public string Language;
+
+                /// <summary>
+                /// A country; see the Countries class for a list.
+                /// </summary>
                 public string Country;
             }
 
             /// <summary>
-            /// Some of the available news countries.
+            /// Countries news is available in.
             /// </summary>
             public static class Countries
             {
-                public const string AusNZ = "AU";
-                public const string Americas = "US";
-                public const string Europe = "GB";
-                public const string Japan = "JP";
+                public const string Australia = "AU";
+                public const string Austria = "AT";
+                public const string Belgium = "BE";
+                public const string Brazil = "BR";
+                public const string Canada = "CA";
+                public const string CzechRepublic = "CZ";
+                public const string Denmark = "DK";
+                public const string Finland = "FI";
+                public const string France = "FR";
+                public const string Germany = "DE";
                 public const string HongKong = "HK";
+                public const string Hungary = "HU";
+                public const string Ireland = "IE";
+                public const string Italy = "IT";
+                public const string Japan = "JP";
+                public const string Mexico = "MX";
+                public const string Netherlands = "NL";
+                public const string NewZealand = "NZ";
+                public const string Norway = "NO";
+                public const string Poland = "PL";
+                public const string Portugal = "PT";
+                public const string Russia = "RU";
+                public const string SouthAfrica = "ZA";
+                public const string SouthKorea = "KR";
+                public const string Spain = "ES";
+                public const string Sweden = "SE";
+                public const string Switzerland = "CH";
+                public const string UnitedKingdom = "GB";
+                public const string UnitedStates = "US";
             }
 
             /// <summary>
-            /// Some of the available news languages.
+            /// Languages news is available in.
             /// </summary>
             public static class Languages
             {
-                public const string EnglishUS = "en-US";
-                public const string EnglishUK = "en-GB";
-                public const string French = "fr-FR";
-                public const string Spanish = "es-ES";
-                public const string Italian = "it-IT";
-                public const string German = "de-DE";
-                public const string Japanese = "ja-JP";
-                public const string Chinese = "zh-HK";
+                public const string Japanese = "ja";
+                public const string AmericanEnglish = "en-US";
+                public const string French = "fr";
+                public const string German = "de";
+                public const string Italian = "it";
+                public const string Spanish = "es";
+                public const string Chinese = "zh-CN";
+                public const string Korean = "ko";
+                public const string Dutch = "nl";
+                public const string Portuguese = "pt";
+                public const string Russian = "ru";
+                public const string Taiwanese = "zh-TW";
+                public const string BritishEnglish = "en-GB";
+                public const string CanadianFrench = "fr-CA";
+                public const string LatinAmericanSpanish = "es-419";
+                public const string SimplifiedChinese = "zh-Hans";
+                public const string TraditionalChinese = "zh-Hant";
             }
 
             /// <summary>
@@ -58,8 +135,7 @@ namespace LiBCAT
             (
                 Crypto.GetBcatData($"https://bcat-list-lp1.cdn.nintendo.net/api/nx/v1/list/nx_news?l={Reg.Language}&c[]={Reg.Country}"),
                 QLaunchTID,
-                NewsPassphrase,
-                true
+                NewsPassphrase
             ));
 
             /// <summary>
@@ -73,8 +149,7 @@ namespace LiBCAT
             (
                 Crypto.GetBcatData($"https://bcat-list-lp1.cdn.nintendo.net/api/nx/v1/list/{TopicID}?l={Reg.Language}&c[]={Reg.Country}"),
                 QLaunchTID,
-                NewsPassphrase,
-                true
+                NewsPassphrase
             ));
 
             /// <summary>
@@ -88,8 +163,7 @@ namespace LiBCAT
             (
                 Crypto.GetBcatData($"https://bcat-topics-lp1.cdn.nintendo.net/api/nx/v1/titles/{TitleID:x16}/topics?l={Reg.Language}&c[]={Reg.Country}"),
                 QLaunchTID,
-                NewsPassphrase,
-                true
+                NewsPassphrase
             ));
 
             /// <summary>
@@ -102,27 +176,28 @@ namespace LiBCAT
             (
                 Crypto.GetBcatData($"https://bcat-topics-lp1.cdn.nintendo.net/api/nx/v1/topics/catalog?l={Reg.Language}&c[]={Reg.Country}"),
                 QLaunchTID,
-                NewsPassphrase,
-                true
-            ));
-
-            /// <summary>
-            /// Gets the news article JSON from the specified URL.
-            /// </summary>
-            /// <param name="URL">The target URL.</param>
-            /// <returns>The news article JSON as a string.</returns>
-            public static string GetNews(string URL) => MessagePackSerializer.ToJson(
-            Crypto.DecryptBcatData
-            (
-                Crypto.GetBcatData(URL),
-                QLaunchTID,
-                NewsPassphrase,
-                true
+                NewsPassphrase
             ));
         }
 
+        /// <summary>
+        /// Provides a wrapper for the BCAT data API.
+        /// </summary>
         public static class Data
         {
+            /// <summary>
+            /// Gets the BCAT data for a specified title ID.
+            /// </summary>
+            /// <param name="TitleID">The target title ID.</param>
+            /// <param name="Passphrase">The passphrase for the target title.</param>
+            /// <returns></returns>
+            public static string GetNxData(ulong TitleID, string Passphrase) => MessagePackSerializer.ToJson(
+            Crypto.DecryptBcatData
+            (
+                Crypto.GetBcatData($"https://bcat-list-lp1.cdn.nintendo.net/api/nx/v1/list/nx_data_{TitleID:x16}"),
+                TitleID,
+                Encoding.ASCII.GetBytes(Passphrase)
+            ));
         }
     }
 }

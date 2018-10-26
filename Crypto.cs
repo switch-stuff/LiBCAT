@@ -5,19 +5,63 @@ using System.Security.Cryptography;
 
 namespace LiBCAT
 {
-    internal static class Crypto
+    internal class Crypto
     {
+        private static readonly byte[] RSAModulo =
+        {
+            0xBB, 0x4E, 0x9D, 0x60, 0x01, 0x4B, 0x3D, 0x3B,
+            0x78, 0xE8, 0x0B, 0x26, 0x7D, 0xD7, 0xBB, 0xC2,
+            0xD8, 0x66, 0x7E, 0x48, 0x7D, 0xC4, 0x23, 0x69,
+            0xEA, 0x60, 0x6A, 0xC6, 0xE1, 0xD1, 0x22, 0xDE,
+            0xB1, 0x46, 0xF3, 0xE5, 0x4D, 0x49, 0x87, 0x3D,
+            0x5F, 0xF4, 0xF7, 0x92, 0xA5, 0x87, 0x50, 0x07,
+            0x9D, 0xF2, 0x8A, 0xAD, 0xE7, 0x0B, 0x5B, 0x33,
+            0x22, 0x49, 0x53, 0x69, 0xF1, 0x8B, 0xDE, 0x51,
+            0xED, 0xE1, 0xC4, 0xB2, 0xF1, 0xA2, 0x98, 0x29,
+            0x10, 0xF8, 0x37, 0x22, 0x0F, 0x44, 0x18, 0x02,
+            0xB8, 0x49, 0xA1, 0x92, 0x34, 0x1E, 0xD8, 0xFF,
+            0xC6, 0x8A, 0x4D, 0x4B, 0xD6, 0x55, 0x5E, 0x14,
+            0xC2, 0x7C, 0x80, 0x2B, 0xF8, 0xC0, 0x07, 0xCC,
+            0x7D, 0x69, 0x96, 0xED, 0x5C, 0xA9, 0x2D, 0xEC,
+            0x5D, 0x6F, 0xCF, 0x45, 0xFC, 0x04, 0xD6, 0x04,
+            0xCE, 0xCC, 0x9A, 0xF1, 0x9B, 0x28, 0xF3, 0x6E,
+            0xAF, 0x95, 0xDF, 0x90, 0x99, 0x47, 0x59, 0xD3,
+            0x08, 0xE7, 0xDD, 0x45, 0xF9, 0xC7, 0xA6, 0x40,
+            0x9C, 0x39, 0xDC, 0x9D, 0x9C, 0x32, 0x5A, 0xD4,
+            0xCB, 0x73, 0xCF, 0x76, 0x3F, 0x21, 0x17, 0x7E,
+            0xE2, 0x5B, 0x56, 0x05, 0x10, 0x10, 0xA0, 0xA3,
+            0x10, 0x6F, 0x2B, 0x66, 0xA7, 0xC4, 0x34, 0xC9,
+            0xCE, 0x22, 0x45, 0x44, 0x80, 0x33, 0x4F, 0x52,
+            0x80, 0xE7, 0xE6, 0x64, 0x1D, 0x18, 0xF4, 0x3E,
+            0xB0, 0xF3, 0xCE, 0x65, 0x5B, 0x9C, 0xDD, 0xF6,
+            0x87, 0xEC, 0xDD, 0xB3, 0xF0, 0x14, 0xC2, 0x9B,
+            0xAB, 0xC3, 0xE8, 0x73, 0x4D, 0xD4, 0x49, 0x5A,
+            0xF1, 0xBB, 0x07, 0xA9, 0xC4, 0xF3, 0x61, 0x25,
+            0xDD, 0x9F, 0xA6, 0x64, 0x46, 0xC8, 0xC7, 0xF1,
+            0x10, 0xB3, 0x0B, 0x41, 0x3E, 0x3D, 0x76, 0x66,
+            0xD1, 0x01, 0xC9, 0x50, 0x34, 0x6A, 0x14, 0x11,
+            0x68, 0x46, 0xD7, 0x72, 0x47, 0x3E, 0xBF, 0x89
+        };
+
+        private static readonly byte[] RSAExponent = { 0, 1, 0, 1 };
+
+        private static RSAParameters Params = new RSAParameters()
+        {
+            Exponent = RSAExponent,
+            Modulus = RSAModulo
+        };
+
         private static class Aes
         {
-            private static byte[] EncBlk(byte[] blk, byte[] key) =>
+            private static byte[] EncBlk(byte[] Block, byte[] Key) =>
                 new AesCryptoServiceProvider()
                 {
-                    Key = key,
+                    Key = Key,
                     Mode = CipherMode.ECB,
                     Padding = PaddingMode.None
                 }
                 .CreateEncryptor()
-                .TransformFinalBlock(blk, 0, 16);
+                .TransformFinalBlock(Block, 0, Block.Length);
 
             public static byte[] CTR(byte[] Data, byte[] Key, byte[] IV)
             {
@@ -28,11 +72,11 @@ namespace LiBCAT
                 {
                     KeyBuf = EncBlk(IV, Key);
 
-                    var ptr = Len - i;
+                    var Ptr = Len - i;
 
-                    if (ptr > 16) ptr = 16;
+                    if (Ptr > 16) Ptr = 16;
 
-                    for (int j = 0; j < ptr; j++)
+                    for (int j = 0; j < Ptr; j++)
                         OutBuf[i + j] = (byte)(KeyBuf[j] ^ Data[i + j]);
 
                     for (var j = 15; j >= 0; j--)
@@ -85,21 +129,66 @@ namespace LiBCAT
             using (var Cli = new WebClient()) return Cli.DownloadData(Url);
         }
 
-        public static byte[] DecryptBcatData(byte[] Data, ulong TitleID, string Passphrase, bool isRetail)
+        public static byte[] DecryptBcatData(byte[] Data, ulong TitleID, byte[] Passphrase)
         {
+            HashAlgorithmName Name;
+            RSASignaturePadding Pad;
+
             using (MemoryStream Strm = new MemoryStream(Data))
             using (BinaryReader Rd = new BinaryReader(Strm))
             {
-                Strm.Position += 5;
-                var KeySize = (Rd.ReadByte() + 1) << 3;
+                if (Rd.ReadUInt32() != 0x74616362)
+                    throw new InvalidDataException("Error: This is not a BCAT file!");
+
                 Strm.Position++;
+
+                var KeySize = (Rd.ReadByte() + 1) << 3;
+
+                switch (Rd.ReadByte())
+                {
+                    case 0:
+                        Name = HashAlgorithmName.SHA1;
+                        Pad = RSASignaturePadding.Pkcs1;
+                        break;
+
+                    case 1:
+                        Name = HashAlgorithmName.SHA256;
+                        Pad = RSASignaturePadding.Pkcs1;
+                        break;
+
+                    case 2:
+                        Name = HashAlgorithmName.SHA1;
+                        Pad = RSASignaturePadding.Pss;
+                        break;
+
+                    case 3:
+                        Name = HashAlgorithmName.SHA256;
+                        Pad = RSASignaturePadding.Pss;
+                        break;
+
+                    default:
+                        throw new InvalidDataException("Error: Unsupported RSA type!");
+                }
+
                 var Index = Rd.ReadByte();
+
                 Strm.Position += 8;
+
                 var IV = Rd.ReadBytes(0x10);
-                Strm.Position += 0x100;
+                var Signature = Rd.ReadBytes(0x100);
                 var EncData = Rd.ReadBytes((int)(Strm.Length - 0x120));
 
-                return Aes.CTR(EncData, PBKDF2(KeySize, Passphrase.TBA(), $"{TitleID:x16}{Salts[Index]}".TBA(), 4096), IV);
+                using (var Rsa = new RSACng())
+                {
+                    Rsa.ImportParameters(Params);
+
+                    var DecData = Aes.CTR(EncData, PBKDF2(KeySize, Passphrase, $"{TitleID:x16}{Salts[Index]}".TBA(), 4096), IV);
+
+                    if (!Rsa.VerifyData(DecData, Signature, Name, Pad))
+                        throw new InvalidDataException("Error: BCAT data has a bad signature!");
+
+                    return DecData;
+                }
             }
         }
 
