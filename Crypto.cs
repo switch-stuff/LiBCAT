@@ -53,24 +53,22 @@ namespace LiBCAT
 
         private static class Aes
         {
-            private static byte[] EncBlk(byte[] Block, byte[] Key) =>
-                new AesCryptoServiceProvider()
+            public static byte[] CTR(byte[] Data, byte[] Key, byte[] IV)
+            {
+                var Aes = new AesCryptoServiceProvider()
                 {
                     Key = Key,
                     Mode = CipherMode.ECB,
                     Padding = PaddingMode.None
                 }
-                .CreateEncryptor()
-                .TransformFinalBlock(Block, 0, Block.Length);
+                .CreateEncryptor();
 
-            public static byte[] CTR(byte[] Data, byte[] Key, byte[] IV)
-            {
                 var Len = Data.Length;
                 byte[] OutBuf = new byte[Len], KeyBuf = new byte[16];
 
                 for (int i = 0; i < Len; i += 16)
                 {
-                    KeyBuf = EncBlk(IV, Key);
+                    KeyBuf = Aes.TransformFinalBlock(IV, 0, IV.Length);
 
                     var Ptr = Len - i;
 
