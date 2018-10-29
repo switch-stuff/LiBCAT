@@ -37,15 +37,17 @@ namespace LiBCAT
         /// <param name="AsJson">Whether to return it as raw data or a Json.</param>
         /// <param name="TID">The target title ID.</param>
         /// <param name="Passphrase">The target title's passphrase.</param>
+        /// <param name="isRetail">Whether the data being decrypted is for retail units.</param>
         /// <returns>The news article JSON as a string.</returns>
-        public static object GetData(string URL, bool AsJson, ulong TID, string Passphrase)
+        public static object GetData(string URL, bool AsJson, ulong TID, string Passphrase, bool isRetail = true)
         {
             var BcatFile =
             Crypto.DecryptBcatData
             (
                 Crypto.GetBcatData(URL),
                 TID,
-                Encoding.ASCII.GetBytes(Passphrase)
+                Encoding.ASCII.GetBytes(Passphrase),
+                isRetail
             );
 
             if (AsJson) return MessagePackSerializer.ToJson(BcatFile);
@@ -161,6 +163,33 @@ namespace LiBCAT
             ));
 
             /// <summary>
+            /// Returns the icon for a topic.
+            /// </summary>
+            /// <param name="TopicID">The topic ID for the title you wish to retrieve an icon for.</param>
+            /// <returns>News list JSON as a string.</returns>
+            public static byte[] GetIcon(string TopicID) => 
+            Crypto.DecryptBcatData
+            (
+                Crypto.GetBcatData($"https://bcat-topics-lp1.cdn.nintendo.net/api/nx/v1/topics/{TopicID}/icon"),
+                QLaunchTID,
+                NewsPassphrase
+            );
+
+            /// <summary>
+            /// Returns details given a specified region and topic ID.
+            /// </summary>
+            /// <param name="Reg">A Region struct.</param>
+            /// <param name="TopicID">The topic ID for the title you wish to retrieve news for.</param>
+            /// <returns>News list JSON as a string.</returns>
+            public static string GetDetails(Region Reg, string TopicID) => MessagePackSerializer.ToJson(
+            Crypto.DecryptBcatData
+            (
+                Crypto.GetBcatData($"https://bcat-topics-lp1.cdn.nintendo.net/api/nx/v1/topics/{TopicID}/detail?l={Reg.Language}&c[]={Reg.Country}"),
+                QLaunchTID,
+                NewsPassphrase
+            ));
+
+            /// <summary>
             /// Gets the topics for a specified title ID.
             /// </summary>
             /// <param name="Reg">A Region struct.</param>
@@ -198,13 +227,16 @@ namespace LiBCAT
             /// </summary>
             /// <param name="TitleID">The target title ID.</param>
             /// <param name="Passphrase">The passphrase for the target title.</param>
+            /// <param name="Environment">What console environment to use.</param>
+            /// <param name="isRetail">Whether the data being decrypted is for retail units.</param>
             /// <returns></returns>
-            public static string GetNxData(ulong TitleID, string Passphrase) => MessagePackSerializer.ToJson(
+            public static string GetNxData(ulong TitleID, string Passphrase, string Environment = "lp1", bool isRetail = true) => MessagePackSerializer.ToJson(
             Crypto.DecryptBcatData
             (
-                Crypto.GetBcatData($"https://bcat-list-lp1.cdn.nintendo.net/api/nx/v1/list/nx_data_{TitleID:x16}"),
+                Crypto.GetBcatData($"https://bcat-list-{Environment}.cdn.nintendo.net/api/nx/v1/list/nx_data_{TitleID:x16}"),
                 TitleID,
-                Encoding.ASCII.GetBytes(Passphrase)
+                Encoding.ASCII.GetBytes(Passphrase),
+                isRetail
             ));
         }
     }
